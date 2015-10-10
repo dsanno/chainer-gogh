@@ -219,6 +219,6 @@ W = args.width
 
 for orig_img, style_img, out_dir in inputs:
     img_content,nw,nh = image_resize(orig_img, W)
-    img_content = image_monochrome(img_content)
+    img_content = image_monochrome(img_content, nw, nh)
     img_style,_,_ = image_resize(style_img, W)
     generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr)
