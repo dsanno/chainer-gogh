@@ -54,6 +54,16 @@ def image_resize(img_file, width):
         gogh = subtract_mean(hoge)
     return xp.asarray(gogh), new_w, new_h
 
+def image_monochrome(img, w, h):
+    new_img = np.zeros((1, 3, h, w), dtype=np.float32)
+    for j in range(h):
+        for i in range(w):
+            c = img[0][0][j][i] * 0.299 + img[0][1][j][i] * 0.587 + img[0][2][j][i] * 0.114
+            new_img[0][0][j][i] = c
+            new_img[0][1][j][i] = c
+            new_img[0][2][j][i] = c
+    return xp.asarray(new_img)
+
 def save_image(img, width, new_w, new_h, it):
     def to_img(x):
         im = np.zeros((new_h,new_w,3))
@@ -202,6 +212,7 @@ if args.gpu>=0:
 
 W = args.width
 img_content,nw,nh = image_resize(args.orig_img, W)
+img_content = image_monochrome(img_content, nw, nh)
 img_style,_,_ = image_resize(args.style_img, W)
 
 generate_image(img_content, img_style, W, nw, nh, img_gen=None, max_iter=args.iter, lr=args.lr)
