@@ -54,7 +54,7 @@ def image_resize(img_file, width):
         gogh = subtract_mean(hoge)
     return xp.asarray(gogh), new_w, new_h
 
-def save_image(img, width, new_w, new_h, it):
+def save_image(img, width, new_w, new_h, it, out_dir):
     def to_img(x):
         im = np.zeros((new_h,new_w,3))
         im[:,:,0] = x[2,:,:]
@@ -63,7 +63,7 @@ def save_image(img, width, new_w, new_h, it):
         def clip(a):
             return 0 if a<0 else (255 if a>255 else a)
         im = np.vectorize(clip)(im).astype(np.uint8)
-        Image.fromarray(im).save(args.out_dir+"/im_%05d.png"%it)
+        Image.fromarray(im).save(out_dir+"/im_%05d.png"%it)
 
     if args.gpu>=0:
         img_cpu = add_mean(img.get())
@@ -95,7 +95,7 @@ class Clip(chainer.Function):
             ''','clip')(x)
         return ret
 
-def generate_image(img_orig, img_style, width, nw, nh, max_iter, lr, img_gen=None):
+def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, img_gen=None):
     mid_orig = nn.forward(Variable(img_orig, volatile=True))
     style_mats = [get_matrix(y) for y in nn.forward(Variable(img_style, volatile=True))]
 
@@ -141,17 +141,15 @@ def generate_image(img_orig, img_style, width, nw, nh, max_iter, lr, img_gen=Non
             img_gen += np.vectorize(clip)(img_gen).reshape(tmp_shape) - img_gen
 
         if i%50==0:
-            save_image(img_gen, W, nw, nh, i)
+            save_image(img_gen, W, nw, nh, i, out_dir)
 
 
 parser = argparse.ArgumentParser(
     description='A Neural Algorithm of Artistic Style')
 parser.add_argument('--model', '-m', default='nin',
                     help='model file (nin, vgg, i2v, googlenet)')
-parser.add_argument('--orig_img', '-i', default='orig.png',
-                    help='Original image')
-parser.add_argument('--style_img', '-s', default='style.png',
-                    help='Style image')
+parser.add_argument('--input_file', '-i', default='input.txt',
+                    help='input data text')
 parser.add_argument('--out_dir', '-o', default='output',
                     help='Output directory')
 parser.add_argument('--gpu', '-g', default=-1, type=int,
@@ -166,18 +164,25 @@ parser.add_argument('--width', '-w', default=435, type=int,
                     help='image width, height')
 args = parser.parse_args()
 
-try:
-    os.mkdir(args.out_dir)
-except:
-    pass
+input_data = open(args.input_file, "r").readlines()
+inputs = [l.split() + ['{}_{}'.format(args.out_dir, i)] for i, l in enumerate(input_data)]
 
-if not os.path.exists(args.orig_img):
-    print 'Error: cannot open original image: {}'.format(args.orig_img)
-    exit()
-
-if not os.path.exists(args.style_img):
-    print 'Error: cannot open style image: {}'.format(args.style_img)
-    exit()
+for i, paths in enumerate(inputs):
+    if not os.path.exists(paths[0]):
+        print 'Error: cannot open original image: {}'.format(paths[0])
+        exit()
+    if not os.path.exists(paths[1]):
+        print 'Error: cannot open style image: {}'.format(paths[1])
+        exit()
+    try:
+        if not os.path.exists(paths[2]):
+            os.mkdir(paths[2])
+        if not os.path.isdir(paths[2]):
+            print 'Error: output path is not directory: {}'.format(paths[2])
+            exit()
+    except:
+        print 'Error: cannot make dir: {}'.format(paths[2])
+        exit()
 
 if args.gpu >= 0:
     cuda.check_cuda_available()
@@ -201,7 +206,8 @@ if args.gpu>=0:
 	nn.model.to_gpu()
 
 W = args.width
-img_content,nw,nh = image_resize(args.orig_img, W)
-img_style,_,_ = image_resize(args.style_img, W)
 
-generate_image(img_content, img_style, W, nw, nh, img_gen=None, max_iter=args.iter, lr=args.lr)
+for orig_img, style_img, out_dir in inputs:
+    img_content,nw,nh = image_resize(orig_img, W)
+    img_style,_,_ = image_resize(style_img, W)
+    generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr)
