@@ -118,7 +118,7 @@ def generate_image(img_orig, img_style, width, nw, nh, max_iter, lr, img_gen=Non
     xg = xp.zeros_like(x.data)
     optimizer = optimizers.Adam(alpha=lr)
     optimizer.setup((img_gen,xg))
-    for i in range(max_iter):
+    for i in range(1, max_iter + 1):
 
         x = Variable(img_gen)
         y = nn.forward(x)
