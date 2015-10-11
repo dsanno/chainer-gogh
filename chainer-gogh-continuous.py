@@ -55,11 +55,14 @@ def image_resize(img_file, width):
     return xp.asarray(gogh), new_w, new_h
 
 def image_monochrome(img, w, h):
-    r = img[0][0]
-    g = img[0][1]
-    b = img[0][2]
-    c = r * 0.299 + g * 0.587 + b * 0.114
-    return xp.asarray([[c, c, c]])
+    new_img = np.zeros((1, 3, h, w), dtype=np.float32)
+    for j in range(h):
+        for i in range(w):
+            c = img[0][0][j][i] * 0.299 + img[0][1][j][i] * 0.587 + img[0][2][j][i] * 0.114
+            new_img[0][0][j][i] = c
+            new_img[0][1][j][i] = c
+            new_img[0][2][j][i] = c
+    return xp.asarray(new_img)
 
 def save_image(img, width, new_w, new_h, it, out_dir):
     def to_img(x):
