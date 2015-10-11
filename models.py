@@ -24,7 +24,7 @@ class NIN:
         return [y0,x1,x2,x3]
 
 class VGG:
-    def __init__(self, fn="VGG_ILSVRC_16_layers.caffemodel", alpha=[0,0,1,1], beta=[1,1,1,1]):
+    def __init__(self, fn="VGG_ILSVRC_16_layers.caffemodel", alpha=[0,0,0,1], beta=[1,1,1,1]):
         print "load model... %s"%fn
         func = caffe.CaffeFunction(fn)
         self.model = func.fs

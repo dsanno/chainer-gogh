@@ -105,7 +105,7 @@ class Clip(chainer.Function):
             ''','clip')(x)
         return ret
 
-def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, img_gen=None):
+def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, img_gen=None, alpha=[0,0,0,1], beta=[1,1,1,1], lam=0.005):
     mid_orig = nn.forward(Variable(img_orig, volatile=True))
     style_mats = [get_matrix(y) for y in nn.forward(Variable(img_style, volatile=True))]
 
@@ -118,6 +118,10 @@ def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, im
     xg = xp.zeros_like(x.data)
     optimizer = optimizers.Adam(alpha=lr)
     optimizer.setup((img_gen,xg))
+    content_weight = np.float32(alpha)
+    content_weight /= content_weight.sum()
+    style_weight = np.float32(beta)
+    style_weight /= style_weight.sum()
     for i in range(1, max_iter + 1):
 
         x = Variable(img_gen)
@@ -131,8 +135,8 @@ def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, im
             gogh_y = F.reshape(y[l], (ch,wd**2))
             gogh_matrix = F.matmul(gogh_y, gogh_y, transb=True)/np.float32(ch*wd**2)
 
-            L1 = np.float32(args.lam) * np.float32(nn.alpha[l])*F.mean_squared_error(y[l], Variable(mid_orig[l].data))
-            L2 = np.float32(nn.beta[l])*F.mean_squared_error(gogh_matrix, Variable(style_mats[l].data))/np.float32(len(y))
+            L1 = np.float32(args.lam) * content_weight[l] * F.mean_squared_error(y[l], Variable(mid_orig[l].data))
+            L2 = style_weight[l] * F.mean_squared_error(gogh_matrix, Variable(style_mats[l].data))/np.float32(len(y))
             L += L1+L2
 
             if i%100==0:
@@ -185,13 +189,13 @@ for i, paths in enumerate(inputs):
         print 'Error: cannot open style image: {}'.format(paths[1])
         exit()
     try:
-        if not os.path.exists(paths[2]):
-            os.mkdir(paths[2])
-        if not os.path.isdir(paths[2]):
-            print 'Error: output path is not directory: {}'.format(paths[2])
+        if not os.path.exists(paths[7]):
+            os.mkdir(paths[7])
+        if not os.path.isdir(paths[7]):
+            print 'Error: output path is not directory: {}'.format(paths[7])
             exit()
     except:
-        print 'Error: cannot make dir: {}'.format(paths[2])
+        print 'Error: cannot make dir: {}'.format(paths[7])
         exit()
 
 if args.gpu >= 0:
@@ -217,8 +221,10 @@ if args.gpu>=0:
 
 W = args.width
 
-for orig_img, style_img, out_dir in inputs:
+for orig_img, style_img, b1, b2, b3, b4, l, out_dir in inputs:
+    beta = map(float, [b1, b2, b3, b4])
+    lam = float(l)
     img_content,nw,nh = image_resize(orig_img, W)
     img_content = image_monochrome(img_content, nw, nh)
     img_style,_,_ = image_resize(style_img, W)
-    generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr)
+    generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr, beta=beta, lam=lam)
