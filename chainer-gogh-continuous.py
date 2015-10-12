@@ -135,7 +135,7 @@ def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, im
             gogh_y = F.reshape(y[l], (ch,wd**2))
             gogh_matrix = F.matmul(gogh_y, gogh_y, transb=True)/np.float32(ch*wd**2)
 
-            L1 = np.float32(args.lam) * content_weight[l] * F.mean_squared_error(y[l], Variable(mid_orig[l].data))
+            L1 = np.float32(lam) * content_weight[l] * F.mean_squared_error(y[l], Variable(mid_orig[l].data))
             L2 = style_weight[l] * F.mean_squared_error(gogh_matrix, Variable(style_mats[l].data))/np.float32(len(y))
             L += L1+L2
 
