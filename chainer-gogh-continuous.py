@@ -54,15 +54,9 @@ def image_resize(img_file, width):
         gogh = subtract_mean(hoge)
     return xp.asarray(gogh), new_w, new_h
 
-def image_monochrome(img, w, h):
-    new_img = np.zeros((1, 3, h, w), dtype=np.float32)
-    for j in range(h):
-        for i in range(w):
-            c = img[0][0][j][i] * 0.299 + img[0][1][j][i] * 0.587 + img[0][2][j][i] * 0.114
-            new_img[0][0][j][i] = c
-            new_img[0][1][j][i] = np.copy(c)
-            new_img[0][2][j][i] = np.copy(c)
-    return xp.asarray(new_img)
+def image_monochrome(img):
+    c = img[0][0] * 0.299 + img[0][1] * 0.587 + img[0][2] * 0.114
+    return xp.asarray([[c, xp.copy(c), xp.copy(c)]], dtype=np.float32)
 
 def save_image(img, width, new_w, new_h, it, out_dir):
     def to_img(x):
@@ -106,8 +100,7 @@ class Clip(chainer.Function):
         return ret
 
 def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, img_gen=None, alpha=[0,0,0,1], beta=[1,1,1,1], lam=0.005):
-    img_content = image_monochrome(img_orig, nw, nh)
-    mid_orig = nn.forward(Variable(img_content, volatile=True))
+    mid_orig = nn.forward(Variable(img_orig, volatile=True))
     style_mats = [get_matrix(y) for y in nn.forward(Variable(img_style, volatile=True))]
 
     if img_gen is None:
@@ -125,7 +118,7 @@ def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, im
     style_weight /= style_weight.sum()
     for i in range(1, max_iter + 1):
 
-        x = Variable(image_monochrome(img_gen, nw, nh))
+        x = Variable(img_gen)
         y = nn.forward(x)
 
         optimizer.zero_grads()
@@ -226,5 +219,6 @@ for orig_img, style_img, b1, b2, b3, b4, l, out_dir in inputs:
     beta = map(float, [b1, b2, b3, b4])
     lam = float(l)
     img_content,nw,nh = image_resize(orig_img, W)
+    img_content = image_monochrome(img_content)
     img_style,_,_ = image_resize(style_img, W)
     generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr, beta=beta, lam=lam)
