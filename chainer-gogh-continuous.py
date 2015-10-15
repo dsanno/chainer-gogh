@@ -99,7 +99,7 @@ class Clip(chainer.Function):
             ''','clip')(x)
         return ret
 
-def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, img_gen=None, alpha=[0,0,0,1], beta=[1,1,1,1], lam=0.005):
+def generate_image(img_orig, img_style, width, nw, nh, out_dir, max_iter, lr, img_gen=None, alpha=[0,0,0,0,1], beta=[1,1,1,1,0], lam=0.005):
     mid_orig = nn.forward(Variable(img_orig, volatile=True))
     style_mats = [get_matrix(y) for y in nn.forward(Variable(img_style, volatile=True))]
 
@@ -216,9 +216,9 @@ if args.gpu>=0:
 W = args.width
 
 for orig_img, style_img, b1, b2, b3, b4, l, out_dir in inputs:
-    beta = map(float, [b1, b2, b3, b4])
+    beta = map(float, [b1, b2, b3, b4, 0])
+    alpha = [0, 0, 0, 0, 1]
     lam = float(l)
     img_content,nw,nh = image_resize(orig_img, W)
-    img_content = image_monochrome(img_content)
     img_style,_,_ = image_resize(style_img, W)
-    generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr, beta=beta, lam=lam)
+    generate_image(img_content, img_style, W, nw, nh, out_dir, img_gen=None, max_iter=args.iter, lr=args.lr, alpha=alpha, beta=beta, lam=lam)
