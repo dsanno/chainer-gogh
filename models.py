@@ -31,7 +31,17 @@ class VGG:
         self.alpha = alpha
         self.beta = beta
     def forward(self, x):
-         conv1_1,conv2_1, conv3_1, conv4_1, conv4_2, = func(inputs={'data': x}, outputs=['conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv4_2'])
+        conv1_1 = F.relu(self.model.conv1_1(x))
+        conv1_2 = F.relu(self.model.conv1_2(conv1_1))
+        p1      = F.max_pooling_2d(conv1_2, 2, stride=2)
+        conv2_1 = F.relu(self.model.conv2_1(p1))
+        conv2_2 = F.relu(self.model.conv2_2(conv2_1))
+        p2      = F.max_pooling_2d(conv2_2, 2, stride=2)
+        conv3_1 = F.relu(self.model.conv3_1(p2))
+        conv3_2 = F.relu(self.model.conv3_2(conv3_1))
+        p3      = F.max_pooling_2d(conv3_2, 2, stride=2)
+        conv4_1 = F.relu(self.model.conv4_1(p3))
+        conv4_2 = F.relu(self.model.conv4_2(conv4_1))
 #        y1 = self.model.conv1_2(F.relu(self.model.conv1_1(x)))
 #        x1 = F.average_pooling_2d(F.relu(y1), 2, stride=2)
 #        y2 = self.model.conv2_2(F.relu(self.model.conv2_1(x1)))
@@ -41,7 +51,7 @@ class VGG:
 #        y4 = self.model.conv4_3(F.relu(self.model.conv4_2(F.relu(self.model.conv4_1(x3)))))
     #    x4 = F.average_pooling_2d(F.relu(y4), 2, stride=2)
     #    y5 = model.conv5_3(F.relu(model.conv5_2(F.relu(model.conv5_1(x4)))))
-        return [conv1_1,conv2_1, conv3_1, conv4_1, conv4_2, conv4_2]
+        return [conv1_1, conv2_1, conv3_1, conv4_1, conv4_2]
 
 class I2V:
     def __init__(self, fn="illust2vec_tag_ver200.caffemodel", alpha=[0,0,0,1,10,100], beta=[0.1,1,1,10,100,1000]):
