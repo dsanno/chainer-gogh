@@ -86,6 +86,21 @@ python chainer-gogh-multi.py -i input.txt
 ```
 VGGを使うときはGPUのメモリ不足に注意
 
+### 単一層のみを使った画像生成
+* コンテンツ画像の復元  
+コンテンツ画像から得られた中間層の出力を使って、復元を行います。
+```
+python chainer-gogh.py -m nin -i input.png -o output_dir -g GPU番号
+```
+* スタイル画像の生成  
+スタイル画像から得られた層の出力を使って新たなスタイル画像の生成を行います。
+中間層の各チャネル間の相関がスタイル画像の層のそれに近い画像を生成します。
+```
+python chainer-gogh.py -m nin -s style.png -o output_dir -g GPU番号
+```
+* 出力画像ファイル名
+`im_(layer)_(iteration).png`
+
 ## パラメタについて
 * `--lr`: 学習速度。生成の進捗が遅い時は大きめにする
 * `--lam`: これを上げるとinput画像に近くなり、下げるとstyle画像に近くなる
