@@ -65,7 +65,7 @@ class I2V:
         return [y1,y2,y3,y4,y5,y6]
 
 class GoogLeNet:
-    def __init__(self, fn="bvlc_googlenet.caffemodel", alpha=[0,0,0,0,1,10], beta=[0.00005, 5, 50, 50, 5000, 500000]):
+    def __init__(self, fn="bvlc_googlenet.caffemodel", alpha=[0,0,0,0.01,0.01], beta=[0.001,1,1,1,1]):
         print "load model... %s"%fn
         self.model = caffe.CaffeFunction(fn)
         self.alpha = alpha
@@ -77,7 +77,8 @@ class GoogLeNet:
         y1 = self.model['conv1/7x7_s2'](x)
         h = F.relu(y1)
         h = F.local_response_normalization(self.pool_func(h, 3, stride=2), n=5)
-        h = F.relu(self.model['conv2/3x3_reduce'](h))
+        y1_1 = self.model['conv2/3x3_reduce'](h)
+        h = F.relu(y1_1)
         y2 = self.model['conv2/3x3'](h)
         h = F.relu(y2)
         h = self.pool_func(F.local_response_normalization(h, n=5), 3, stride=2)
@@ -93,6 +94,8 @@ class GoogLeNet:
         out5 = self.model['inception_3b/5x5'](F.relu(self.model['inception_3b/5x5_reduce'](h)))
         pool = self.model['inception_3b/pool_proj'](self.pool_func(h, 3, stride=1, pad=1))
         y4 = F.concat((out1, out3, out5, pool), axis=1)
+        return [y1, y1_1, y2, y3, y4]
+
         h = F.relu(y4)
 
         h = self.pool_func(h, 3, stride=2)
